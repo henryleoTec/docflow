@@ -1,0 +1,167 @@
+<!-- documents/templates/documents/dashboard.html -->
+
+{% extends "documents/base.html" %}
+
+{% block title %}Dashboard - DocFlow{% endblock %}
+
+{% block content %}
+
+<h1>Dashboard</h1>
+
+<hr>
+
+<h2>Usage</h2>
+
+<div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;">
+
+  <div style="background: var(--color-background-secondary);
+              border-radius: 8px; padding: 16px; min-width: 120px; text-align: center;">
+    <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">Total Files</p>
+    <p style="font-size: 28px; font-weight: 500; margin: 4px 0;">{{ total }}</p>
+  </div>
+
+  <div style="background: var(--color-background-secondary);
+              border-radius: 8px; padding: 16px; min-width: 120px; text-align: center;">
+    <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">Converted</p>
+    <p style="font-size: 28px; font-weight: 500; margin: 4px 0; color: green;">{{ converted }}</p>
+  </div>
+
+  <div style="background: var(--color-background-secondary);
+              border-radius: 8px; padding: 16px; min-width: 120px; text-align: center;">
+    <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">Pending</p>
+    <p style="font-size: 28px; font-weight: 500; margin: 4px 0; color: orange;">{{ pending }}</p>
+  </div>
+
+  <div style="background: var(--color-background-secondary);
+              border-radius: 8px; padding: 16px; min-width: 120px; text-align: center;">
+    <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">Uploads Left</p>
+    <p style="font-size: 28px; font-weight: 500; margin: 4px 0; color: {% if remaining == 0 %}red{% else %}inherit{% endif %};">
+      {{ remaining }}
+    </p>
+  </div>
+
+</div>
+
+<p style="font-size: 13px; color: var(--color-text-secondary);">
+  Storage: {{ total }} / {{ limit }} files used
+</p>
+
+<div style="background: #e9e9e9; border-radius: 999px; height: 10px;
+            width: 100%; max-width: 400px; overflow: hidden; margin-bottom: 24px;">
+  <div style="height: 100%; border-radius: 999px; background: #1D9E75;
+              width: {{ usage_percent }}%; transition: width 0.4s ease;">
+  </div>
+</div>
+
+{% if remaining == 0 %}
+  <p style="color: red; font-size: 14px;">
+    You have reached your free tier limit of 5 files.
+    Upgrade to upload more.
+  </p>
+{% else %}
+  <a href="{% url 'document-create' %}">
+    <button>Upload New Document</button>
+  </a>
+{% endif %}
+
+<hr>
+
+<h2>Conversion Breakdown</h2>
+
+{% if type_breakdown %}
+  <table style="width: 100%; max-width: 400px; font-size: 14px;
+                border-collapse: collapse; margin-bottom: 24px;">
+    <thead>
+      <tr>
+        <th style="text-align: left; padding: 8px 0;
+                   border-bottom: 1px solid var(--color-border-tertiary);">
+          Type
+        </th>
+        <th style="text-align: right; padding: 8px 0;
+                   border-bottom: 1px solid var(--color-border-tertiary);">
+          Count
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in type_breakdown %}
+        <tr>
+          <td style="padding: 6px 0; color: var(--color-text-primary);">
+            {{ item.conversion_type }}
+          </td>
+          <td style="padding: 6px 0; text-align: right;
+                     color: var(--color-text-secondary);">
+            {{ item.count }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p style="color: var(--color-text-secondary);">No conversions yet.</p>
+{% endif %}
+
+<hr>
+
+<h2>Recent Documents</h2>
+
+{% for document in recent_documents %}
+  <div style="border: 1px solid var(--color-border-tertiary);
+              border-radius: 8px; padding: 12px 16px; margin-bottom: 10px;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <strong>{{ document.title }}</strong>
+
+      {% if document.converted %}
+        <span style="background: #EAF3DE; color: #3B6D11; font-size: 12px;
+                     padding: 3px 10px; border-radius: 6px;">
+          Converted
+        </span>
+      {% else %}
+        <span style="background: #FAEEDA; color: #854F0B; font-size: 12px;
+                     padding: 3px 10px; border-radius: 6px;">
+          Pending
+        </span>
+      {% endif %}
+    </div>
+
+    <p style="font-size: 13px; color: var(--color-text-secondary); margin: 4px 0 0;">
+      {{ document.get_conversion_type_display }} ·
+      {{ document.created_at|date:"M d, Y" }}
+    </p>
+
+    <a href="{% url 'document-detail' document.pk %}"
+       style="font-size: 13px;">View</a>
+
+  </div>
+{% empty %}
+  <p style="color: var(--color-text-secondary);">No documents yet.</p>
+{% endfor %}
+
+<hr>
+
+<h2>API Access</h2>
+
+<p style="font-size: 14px;">
+  Use the DocFlow REST API to integrate conversions into your own apps.
+</p>
+
+<p style="font-size: 14px;">
+  Get your token:
+</p>
+
+<pre style="background: var(--color-background-secondary);
+            padding: 12px; border-radius: 8px; font-size: 13px;
+            overflow-x: auto;">
+POST /api/token/
+{
+  "username": "{{ request.user.username }}",
+  "password": "your-password"
+}
+</pre>
+
+<p style="font-size: 14px;">
+  <a href="/api/docs/">View full API documentation (Swagger)</a>
+</p>
+
+{% endblock %}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>Your file is ready, {{ user.username }}!</h2>
+
+  <p>
+    Your document <strong>{{ document.title }}</strong>
+    has been converted successfully.
+  </p>
+
+  <p>
+    <a href="{{ download_url }}"
+       style="background:#4CAF50; color:white; padding:10px 20px;
+              text-decoration:none; border-radius:4px;">
+      View &amp; Download
+    </a>
+  </p>
+
+  <p>Conversion type: {{ document.get_conversion_type_display }}</p>
+  <!-- .get_conversion_type_display is a Django method auto-generated
+       for any field that has choices= set.
+       It returns the human-readable label e.g. "Word to PDF"
+       instead of the stored value "word_to_pdf" -->
+
+  <p>Thanks,<br>The DocFlow Team</p>
+</body>
+</html>

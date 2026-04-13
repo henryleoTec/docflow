@@ -1,0 +1,118 @@
+{% extends "documents/base.html" %}
+
+{% block title %}{{ document.title }} - DocFlow{% endblock %}
+
+{% block content %}
+
+  <h1>{{ document.title }}</h1>
+  <p>Conversion: {{ document.get_conversion_type_display }}</p>
+  <p>Uploaded: {{ document.created_at|date:"M d, Y" }}</p>
+  <p>Original file: <a href="{{ document.file.url }}" download>Download Original</a></p>
+
+  <hr>
+
+  {% if document.converted %}
+
+    <p style="color: green; font-weight: 500;">Converted successfully!</p>
+    <a href="{{ document.converted_file.url }}" download>
+      <button>Download Converted File</button>
+    </a>
+
+  {% else %}
+
+    <button id="convert-btn">Convert Now</button>
+
+    <div id="progress-wrap" style="display: none; margin-top: 16px; max-width: 480px;">
+
+      <div style="background: #e9e9e9; border-radius: 999px; height: 10px;
+                  width: 100%; overflow: hidden;">
+        <div id="progress-fill"
+             style="height: 100%; border-radius: 999px; background: #1D9E75;
+                    width: 0%; transition: width 0.4s ease;">
+        </div>
+      </div>
+
+      <p id="status-label"
+         style="font-size: 13px; color: gray; margin-top: 6px;">
+        Starting...
+      </p>
+
+    </div>
+
+    <div id="error-box"
+         style="display: none; color: #A32D2D; font-size: 13px; margin-top: 10px;">
+    </div>
+
+    <script>
+      const pk = {{ document.pk }};
+      const convertUrl = "{% url 'document-convert' document.pk %}";
+      const statusUrl  = "{% url 'document-status' document.pk %}";
+      const csrfToken  = "{{ csrf_token }}";
+
+      document.getElementById("convert-btn").addEventListener("click", function () {
+
+        // Disable button and show progress bar immediately
+        this.disabled = true;
+        this.textContent = "Converting...";
+        document.getElementById("progress-wrap").style.display = "block";
+
+        // Fire the convert view — use POST so CSRF is respected
+        fetch(convertUrl, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json",
+          },
+        });
+
+        // Poll the status endpoint every second
+        const interval = setInterval(() => {
+          fetch(statusUrl)
+            .then(res => res.json())
+            .then(data => {
+
+              // Update progress bar width
+              document.getElementById("progress-fill").style.width = data.percent + "%";
+
+              // Update status label based on how far along we are
+              if (data.percent < 30) {
+                document.getElementById("status-label").textContent = "Reading file...";
+              } else if (data.percent < 90) {
+                document.getElementById("status-label").textContent = "Converting...";
+              } else if (data.percent < 100) {
+                document.getElementById("status-label").textContent = "Sending email notification...";
+              }
+
+              // Conversion finished — reload so download link appears
+              if (data.status === "done") {
+                clearInterval(interval);
+                document.getElementById("status-label").textContent = "Done! Loading download link...";
+                setTimeout(() => location.reload(), 800);
+              }
+
+              // Something went wrong — show the error
+              if (data.status === "error") {
+                clearInterval(interval);
+                document.getElementById("status-label").textContent = "Conversion failed.";
+                const errorBox = document.getElementById("error-box");
+                errorBox.style.display = "block";
+                errorBox.textContent = data.message;
+              }
+
+            })
+            .catch(() => {
+              // Network error — stop polling silently
+              clearInterval(interval);
+            });
+
+        }, 1000);
+
+      });
+    </script>
+
+  {% endif %}
+
+  <br><br>
+  <a href="{% url 'document-list' %}">Back to My Documents</a>
+
+{% endblock %}

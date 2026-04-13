@@ -1,0 +1,29 @@
+{% extends "documents/base.html" %}
+
+{% block title %}My Documents - DocFlow{% endblock %}
+
+{% block content %}
+  <h1>My Documents</h1>
+  <a href="{% url 'document-create' %}">Upload New Document</a>
+  <hr>
+
+  {% for document in documents %}
+    <div style="border:1px solid #ddd; padding:15px; margin:10px 0; border-radius:6px;">
+      <h3>{{ document.title }}</h3>
+      <p>Type: {{ document.get_conversion_type_display }}</p>
+      <p>Uploaded: {{ document.created_at|date:"M d, Y" }}</p>
+      <p>
+        Status:
+        {% if document.converted %}
+          <span style="color:green;">Converted</span>
+        {% else %}
+          <span style="color:orange;">Pending</span>
+        {% endif %}
+      </p>
+      <a href="{% url 'document-detail' document.pk %}">View</a> |
+      <a href="{% url 'document-delete' document.pk %}">Delete</a>
+    </div>
+  {% empty %}
+    <p>You haven't uploaded any documents yet.</p>
+  {% endfor %}
+{% endblock %}

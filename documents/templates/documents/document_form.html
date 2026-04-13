@@ -1,0 +1,12 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Upload Document - DocFlow{% endblock %}
+
+{% block content %}
+  <h1>Upload Document</h1>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Upload</button>
+  </form>
+{% endblock %}
